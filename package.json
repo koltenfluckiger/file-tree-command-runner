@@ -1,0 +1,100 @@
+{
+  "name": "file-tree-command-runner",
+  "displayName": "File Tree Command Runner",
+  "description": "Adds a right click menu item to run a custom command on that file",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    ""
+  ],
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "File Tree Command Runner Settings",
+      "properties": {
+        "fileTreeCommandRunner.fileName": {
+          "type": "string",
+          "default": "file-tree-command-runner.json",
+          "description": "The name of the file that contains the CLI commands",
+          "scope": "resource"
+        },
+        "fileTreeCommandRunner.debugMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to output debug information to the console",
+          "scope": "window"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "file-tree-command-runner.runCLICommandOnFile",
+        "title": "Run Custom Command on File",
+        "category": "File Tree Command Runner"
+      },
+      {
+        "command": "file-tree-command-runner.runCLICommandOnFileDirectory",
+        "title": "Run Custom Command on File Directory",
+        "category": "File Tree Command Runner"
+      },
+      {
+        "command": "file-tree-command-runner.openSettings",
+        "title": "Open Settings",
+        "category": "File Tree Command Runner"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "file-tree-command-runner.openSettings",
+          "when": "view == explorer",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "file-tree-command-runner.runCLICommandOnFile",
+          "group": "navigation"
+        },
+        {
+          "command": "file-tree-command-runner.runCLICommandOnFileDirectory",
+          "group": "navigation"
+        },
+        {
+          "command": "file-tree-command-runner.openSettings",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "publisher": "Kolten Fluckiger",
+  "scripts": {
+    "vscode:prepublish": "pnpm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "pnpm run compile && pnpm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.93.0",
+    "@types/mocha": "^10.0.8",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^8.7.0",
+    "@typescript-eslint/parser": "^8.7.0",
+    "eslint": "^9.11.1",
+    "typescript": "^5.6.2",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1"
+  }
+}

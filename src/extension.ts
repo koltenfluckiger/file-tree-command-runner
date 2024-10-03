@@ -26,13 +26,10 @@ function isFile(path: string): boolean | Error {
 	}
 	return false;
 }
-function parseCommands(fileName: string): Command[] {
+function parseCommandsFromFile(fileName: string): Command[] {
 	let commands: Command[];
 	try {
 		if (!fs.existsSync(fileName)) {
-			vscode.window.showErrorMessage(
-				`Could not find ${fileName} in the workspace.`
-			);
 			return [];
 		}
 
@@ -45,15 +42,33 @@ function parseCommands(fileName: string): Command[] {
 		return [];
 	}
 }
-
-function getConfig(): {fileName: string; debugMode: boolean} {
+function parseCommands(
+	globalCommands: Command[],
+	fileCommands: Command[] = []
+): Command[] {
+	// Combine global commands with file-specific commands
+	return [...globalCommands, ...fileCommands];
+}
+function getConfig(): {
+	fileName: string;
+	debugMode: boolean;
+	globalCommands: Command[];
+} {
 	const config = vscode.workspace.getConfiguration("fileTreeCommandRunner");
 	const fileName = config.get<string>(
 		"fileName",
 		"file-tree-command-runner.json"
 	);
 	const debugMode = config.get<boolean>("debugMode", false);
-	return {fileName: fileName, debugMode: debugMode};
+
+	// Retrieve global commands from settings
+	const globalCommands = config.get<Command[]>("globalCommands", []);
+
+	return {
+		fileName: fileName,
+		debugMode: debugMode,
+		globalCommands: globalCommands,
+	};
 }
 
 function showMessage(
@@ -76,7 +91,7 @@ export function activate(context: vscode.ExtensionContext) {
 	let runCLICommandOnFileDisposable = vscode.commands.registerCommand(
 		"file-tree-command-runner.runCLICommandOnFile",
 		async (uri: vscode.Uri) => {
-			const {fileName, debugMode} = getConfig();
+			const {fileName, debugMode, globalCommands} = getConfig();
 			const workspaceFolders = vscode.workspace.workspaceFolders;
 			if (!workspaceFolders || workspaceFolders.length === 0) {
 				showMessage("No workspace folder is open.", MessageType.error);
@@ -85,16 +100,20 @@ export function activate(context: vscode.ExtensionContext) {
 			const workspaceRoot = workspaceFolders[0].uri.fsPath;
 
 			const filePath = path.join(workspaceRoot, fileName);
-			const commands = parseCommands(filePath);
+			const fileCommands = fs.existsSync(filePath)
+				? parseCommandsFromFile(filePath)
+				: [];
+
+			const allCommands = parseCommands(globalCommands, fileCommands);
 			const selectedCommandName = await vscode.window.showQuickPick(
-				commands.map((c) => c.name),
+				allCommands.map((c) => c.name),
 				{
 					placeHolder: "Select a command to run on file",
 				}
 			);
 			const commandFile = uri.fsPath;
 			if (selectedCommandName) {
-				const selectedCommand = commands.find(
+				const selectedCommand = allCommands.find(
 					(c) => c.name === selectedCommandName
 				);
 
@@ -110,7 +129,7 @@ export function activate(context: vscode.ExtensionContext) {
 	let runCLICommandOnFileDirectoryDisposable = vscode.commands.registerCommand(
 		"file-tree-command-runner.runCLICommandOnFileDirectory",
 		async (uri: vscode.Uri) => {
-			const {fileName, debugMode} = getConfig();
+			const {fileName, debugMode, globalCommands} = getConfig();
 			const workspaceFolders = vscode.workspace.workspaceFolders;
 			if (!workspaceFolders || workspaceFolders.length === 0) {
 				showMessage("No workspace folder is open.", MessageType.error);
@@ -118,26 +137,30 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 			const workspaceRoot = workspaceFolders[0].uri.fsPath;
 			const filePath = path.join(workspaceRoot, fileName);
-			const commands = parseCommands(filePath);
-			const selectedCommandName = await vscode.window.showQuickPick(
-				commands.map((c) => c.name),
-				{
-					placeHolder: "Select a command to run on file directory",
-				}
-			);
+			const fileCommands = fs.existsSync(filePath)
+				? parseCommandsFromFile(filePath)
+				: [];
 			const commandFile = uri.fsPath;
 			const commandDirectory = isFile(commandFile)
 				? path.dirname(commandFile)
 				: commandFile;
 
+			const allCommands = parseCommands(globalCommands, fileCommands);
+			const selectedCommandName = await vscode.window.showQuickPick(
+				allCommands.map((c) => c.name),
+				{
+					placeHolder: "Select a command to run on file",
+				}
+			);
+
 			if (selectedCommandName) {
-				const selectedCommand = commands.find(
+				const selectedCommand = allCommands.find(
 					(c) => c.name === selectedCommandName
 				);
 
 				if (selectedCommand) {
 					if (debugMode) {
-						showMessage(`${selectedCommand.command} ${commandFile}`);
+						showMessage(`cd ${commandDirectory} && ${selectedCommand.command}`);
 					}
 					runCommandInBackground(
 						`cd ${commandDirectory} && ${selectedCommand.command}`

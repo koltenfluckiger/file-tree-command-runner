@@ -10,7 +10,7 @@
     "Other"
   ],
   "activationEvents": [
-    ""
+    "onStartupFinished"
   ],
   "repository": {
     "type": "git",
@@ -109,7 +109,7 @@
       ]
     }
   },
-  "publisher": "Kolten-Fluckiger",
+  "publisher": "olympian-dev",
   "scripts": {
     "vscode:prepublish": "yarn run compile",
     "compile": "tsc -p ./",

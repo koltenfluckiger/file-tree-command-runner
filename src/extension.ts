@@ -101,7 +101,6 @@ function showMessage( message: string, messageType: MessageType = MessageType.in
 
 function normalizeCommand( command: string | string[], cwd: string, os: string ): string {
 	const separator = os === "windows" ? "&&" : "&&";
-
 	const commands = Array.isArray( command ) ? command : command.split( ";" ).map( c => c.trim() );
 	const processed = commands.map( c => {
 		if ( os === "windows" ) {
@@ -134,6 +133,7 @@ export function activate( context: vscode.ExtensionContext ) {
 				const selectedCommand = allCommands.find( c => c.name === selectedCommandName );
 				if ( selectedCommand ) {
 					if ( debugMode ) {
+						logMessage( `${ selectedCommand.command }` );
 						showMessage( `${ selectedCommand.command }` );
 					}
 					runCommandInBackground( `${ selectedCommand.command } ${ commandFile }` );
@@ -165,19 +165,18 @@ export function activate( context: vscode.ExtensionContext ) {
 				const selectedCommand = allCommands.find( c => c.name === selectedCommandName );
 				if ( selectedCommand ) {
 					const fullCommand = normalizeCommand( selectedCommand.command, commandDirectory, os );
-					if ( debugMode ) logMessage( `[FileTree] Executing: ${ fullCommand }` );
+					if ( debugMode ) { logMessage( `[FileTree] Executing: ${ fullCommand }` ); }
 					runCommandInBackground( fullCommand );
 				}
 			}
 		}
 	);
 
-	const onSaveDisposable = vscode.workspace.onDidSaveTextDocument( async ( document ) => {
+	let onSaveDisposable = vscode.workspace.onDidSaveTextDocument( async ( document ) => {
 		const { fileName, debugMode, globalCommands, runCommandOnSave, enabledFileTypes } = getConfig();
 		if ( !runCommandOnSave ) return;
 		const filePath = document.uri.fsPath;
 		if ( !enabledFileTypes.some( ext => filePath.endsWith( ext ) ) ) return;
-
 		const os = getOSPlatform();
 		const workspaceFolders = vscode.workspace.workspaceFolders;
 		if ( !workspaceFolders || workspaceFolders.length === 0 ) return;
@@ -188,10 +187,12 @@ export function activate( context: vscode.ExtensionContext ) {
 		const fileCommands = fs.existsSync( yamlPath ) ? parseCommandsFromFile( yamlPath ) : [];
 		const allCommands = parseCommands( globalCommands, fileCommands );
 		const selectedCommand = allCommands.find( c => c.name === "On Save" ) || allCommands[ 0 ];
-		logMessage( `${ fileName }, ${ debugMode }, ${ globalCommands }, ${ runCommandOnSave }, ${ enabledFileTypes }` );
 		if ( selectedCommand ) {
 			const fullCommand = normalizeCommand( selectedCommand.command, commandDirectory, os );
-			if ( debugMode ) logMessage( `[FileTree] Running on save: ${ fullCommand }` );
+			if ( debugMode ) {
+				showMessage( `[FileTree] Running on save: ${ fullCommand }` );
+				logMessage( `[FileTree] Running on save: ${ fullCommand }` );
+			}
 			runCommandInBackground( fullCommand, debugMode );
 		}
 	} );
@@ -199,19 +200,21 @@ export function activate( context: vscode.ExtensionContext ) {
 	let openSettings = vscode.commands.registerCommand( "file-tree-command-runner.openSettings", () => {
 		vscode.commands.executeCommand( "workbench.action.openSettings", "fileTreeCommandRunner" );
 	} );
-	context.subscriptions.push( outputChannel );
+
+
 	context.subscriptions.push( runCLICommandOnFileDisposable );
 	context.subscriptions.push( runCLICommandOnFileDirectoryDisposable );
 	context.subscriptions.push( openSettings );
 	context.subscriptions.push( onSaveDisposable );
 
+	logMessage( "File Tree Command Runner Initilzed..." );
 }
 
 export function deactivate() { }
 
 function runCommandInBackground( command: string, debugMode = false ): void {
-	outputChannel.show( true );
 	const shell = spawn( command, { shell: true } );
+	if ( debugMode ) { showMessage( "Starting command..." ); }
 	shell.stdout.on( "data", ( data ) => {
 		logMessage( `stdout: ${ data }` );
 	} );
@@ -221,7 +224,7 @@ function runCommandInBackground( command: string, debugMode = false ): void {
 	} );
 
 	shell.on( "close", ( code ) => {
-		logMessage( `Command exited with code ${ code }` );
+		logMessage( `Command "${ command }" failed with exit code ${ code }.` );
 		if ( code === 0 ) {
 			if ( debugMode ) {
 				showMessage( `Command "${ command }" completed successfully.`, MessageType.info );

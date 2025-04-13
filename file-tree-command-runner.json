@@ -1,8 +1,0 @@
-{
-    "commands": [
-        {
-            "name": "generate-command-export",
-            "command": "generate-command-export"
-        }
-    ]
-}

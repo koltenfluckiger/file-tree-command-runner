@@ -2,7 +2,7 @@
   "name": "file-tree-command-runner",
   "displayName": "File Tree Command Runner",
   "description": "Adds a right click menu item to run a custom command on that file",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.93.0"
   },
@@ -24,7 +24,7 @@
       "properties": {
         "fileTreeCommandRunner.fileName": {
           "type": "string",
-          "default": "file-tree-command-runner.json",
+          "default": "file-tree-command-runner.yaml",
           "description": "The name of the file that contains the CLI commands",
           "scope": "resource"
         },
@@ -50,6 +50,21 @@
             }
           },
           "description": "Global commands to run when no file-specific commands are found."
+        },
+        "fileTreeCommandRunner.runCommandOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically run a command when a file is saved."
+        },
+        "fileTreeCommandRunner.enabledFileTypes": {
+          "type": "array",
+          "default": [
+            ".ts",
+            ".js",
+            ".yaml",
+            ".yml"
+          ],
+          "description": "List of file extensions to trigger command on save (e.g., .ts, .py)"
         }
       }
     },
@@ -94,24 +109,27 @@
       ]
     }
   },
-  "publisher": "Kolten Fluckiger",
+  "publisher": "Kolten-Fluckiger",
   "scripts": {
-    "vscode:prepublish": "pnpm run compile",
+    "vscode:prepublish": "yarn run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "pnpm run compile && pnpm run lint",
+    "pretest": "yarn run compile && yarn run lint",
     "lint": "eslint src",
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.93.0",
     "@types/mocha": "^10.0.8",
     "@types/node": "20.x",
+    "@types/vscode": "^1.93.0",
     "@typescript-eslint/eslint-plugin": "^8.7.0",
     "@typescript-eslint/parser": "^8.7.0",
-    "eslint": "^9.11.1",
-    "typescript": "^5.6.2",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1"
+    "@vscode/test-electron": "^2.4.1",
+    "eslint": "^9.11.1",
+    "typescript": "^5.6.2"
+  },
+  "dependencies": {
+    "yaml": "^2.7.1"
   }
 }

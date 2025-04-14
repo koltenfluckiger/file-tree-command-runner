@@ -1,3 +1,10 @@
 commands:
   - name: Generate Command File
-    command: touch file-tree-command-runner.yaml
+    command:
+      - |
+        cat << 'EOF' > file-tree-command-runner.yaml
+        commands:
+          - name: Template Command
+            command:
+              - command -v ls
+        EOF

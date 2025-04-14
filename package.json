@@ -62,7 +62,10 @@
             ".ts",
             ".js",
             ".yaml",
-            ".yml"
+            ".yml",
+            ".zsh",
+            ".py",
+            ".sh"
           ],
           "description": "List of file extensions to trigger command on save (e.g., .ts, .py)"
         }
@@ -120,7 +123,7 @@
   },
   "devDependencies": {
     "@types/mocha": "^10.0.8",
-    "@types/node": "20.x",
+    "@types/node": "^22.14.1",
     "@types/vscode": "^1.93.0",
     "@typescript-eslint/eslint-plugin": "^8.7.0",
     "@typescript-eslint/parser": "^8.7.0",
